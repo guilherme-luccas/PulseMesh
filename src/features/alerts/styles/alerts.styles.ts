@@ -70,6 +70,9 @@ export const alertsStyles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   syncButtonDisabled: {
     opacity: 0.45,

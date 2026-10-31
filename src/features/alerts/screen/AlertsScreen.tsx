@@ -1,4 +1,4 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConnectivityBanner } from '../../connectivity/components/ConnectivityBanner';
 import { AdminCodeSheet } from '../../admin/components/AdminCodeSheet';
@@ -71,8 +71,9 @@ export function AlertsScreen() {
             style={[alertsStyles.syncButton, syncDisabled ? alertsStyles.syncButtonDisabled : null]}
             accessibilityRole="button"
             accessibilityLabel="Sincronizar fila"
-            accessibilityState={{ disabled: syncDisabled }}
+            accessibilityState={{ disabled: syncDisabled, busy: syncing }}
           >
+            {syncing ? <ActivityIndicator size="small" color="#D7F5EA" /> : null}
             <Text style={alertsStyles.syncButtonText}>{syncing ? 'Sincronizando' : 'Sincronizar'}</Text>
           </Pressable>
         </View>

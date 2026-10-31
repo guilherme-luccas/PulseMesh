@@ -5,6 +5,9 @@ export const connectivityStyles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   online: {
     backgroundColor: '#1E3A34',

@@ -75,7 +75,8 @@ export const useAlertsStore = create<AlertsStoreState>()(
         }
 
         syncTask = (async () => {
-          set({ syncing: true });
+          const startedAt = Date.now();
+          set({ syncing: true, syncMessage: null });
           try {
             const status = await connectivityService.refresh();
             useConnectivityStore.getState().setStatus(status, { react: false });
@@ -88,6 +89,10 @@ export const useAlertsStore = create<AlertsStoreState>()(
           } catch {
             set({ syncMessage: 'Não foi possível sincronizar a fila.' });
           } finally {
+            const remaining = 700 - (Date.now() - startedAt);
+            if (remaining > 0) {
+              await new Promise((resolve) => setTimeout(resolve, remaining));
+            }
             set({ syncing: false });
             syncTask = null;
           }

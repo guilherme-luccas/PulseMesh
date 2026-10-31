@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useAlertsStore } from '../../alerts/store/useAlertsStore';
 import { useConnectivityStore } from '../store/useConnectivityStore';
 import { connectivityStyles } from '../styles/connectivity.styles';
@@ -32,6 +32,7 @@ export function ConnectivityBanner() {
       accessibilityRole="text"
       accessibilityLabel={bannerLabel(status, syncing, syncMessage)}
     >
+      {syncing ? <ActivityIndicator size="small" color="#F4F7F5" /> : null}
       <Text style={connectivityStyles.text}>{bannerLabel(status, syncing, syncMessage)}</Text>
     </View>
   );

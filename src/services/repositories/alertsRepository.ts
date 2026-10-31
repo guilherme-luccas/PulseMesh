@@ -1,10 +1,24 @@
 import { applyCreate, applySyncSuccess } from '../../features/alerts/domain/alertsDomain';
-import type { AlertSituation, AlertsSnapshot, CreateAlertInput } from '../../features/alerts/types/alert.types';
+import type { AlertSituation, AlertsSnapshot, CreateAlertInput, EmergencyAlert } from '../../features/alerts/types/alert.types';
 import { alertsApi } from '../api/alertsApi';
+import { peopleApi } from '../api/peopleApi';
 import { alertsDatabase } from '../database/alertsDatabase';
+import { identityService } from '../identity/identityService';
 
 function createId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function toRemoteAlert(alert: EmergencyAlert, reporterId: string) {
+  return {
+    id: alert.id,
+    title: alert.title,
+    description: alert.description,
+    severity: alert.severity,
+    createdAt: alert.createdAt,
+    coordinate: alert.coordinate,
+    reporterId,
+  };
 }
 
 export const alertsRepository = {
@@ -34,7 +48,16 @@ export const alertsRepository = {
 
   async sync(): Promise<AlertsSnapshot> {
     const current = alertsDatabase.read();
+    const identity = identityService.current() ?? identityService.ensure();
     const syncedAlertIds = new Set<string>();
+
+    let token: string;
+    try {
+      const person = await peopleApi.register({ id: identity.id, shortCode: identity.shortCode });
+      token = person.token;
+    } catch {
+      return current;
+    }
 
     for (const entry of current.outbox) {
       const alert = current.alerts.find((item) => item.id === entry.alertId);
@@ -43,8 +66,12 @@ export const alertsRepository = {
         continue;
       }
 
+      if (alert.reporterId && alert.reporterId !== identity.id) {
+        continue;
+      }
+
       try {
-        await alertsApi.create(alert);
+        await alertsApi.create(toRemoteAlert(alert, identity.id), token);
         syncedAlertIds.add(alert.id);
       } catch {
         // Keep the entry in the outbox until a later sync succeeds.
