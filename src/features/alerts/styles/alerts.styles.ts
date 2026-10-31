@@ -18,10 +18,36 @@ export const alertsStyles = StyleSheet.create({
     paddingBottom: 8,
     gap: 8,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   title: {
     color: '#F4F7F5',
     fontSize: 28,
     fontWeight: '700',
+    flex: 1,
+  },
+  adminButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#31423B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  adminButtonActive: {
+    borderColor: '#E8F36A',
+    backgroundColor: '#24332D',
+  },
+  adminButtonText: {
+    color: '#C5D2CC',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  adminButtonTextActive: {
+    color: '#E8F36A',
   },
   subtitle: {
     color: '#9AABA3',
@@ -99,6 +125,15 @@ export const alertsStyles = StyleSheet.create({
     color: '#7E9088',
     fontSize: 12,
   },
+  topicLink: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  topicLinkText: {
+    color: '#E8F36A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   composer: {
     borderTopWidth: 1,
     borderTopColor: '#24302B',
@@ -121,6 +156,10 @@ export const alertsStyles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   severityRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  queueRow: {
     flexDirection: 'row',
     gap: 8,
   },

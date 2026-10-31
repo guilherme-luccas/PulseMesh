@@ -23,7 +23,10 @@ export function applyCreate(
         severity: input.severity,
         createdAt: ids.now,
         syncStatus: 'pending',
+        situation: 'open',
         coordinate: input.coordinate,
+        reporterId: input.reporterId,
+        reporterCode: input.reporterCode,
       },
       ...snapshot.alerts,
     ],
@@ -70,6 +73,7 @@ export function runAlertsDomainCheck(): void {
 
   assertCheck(created.alerts.length === 1, 'create adds one alert');
   assertCheck(created.alerts[0]?.syncStatus === 'pending', 'create stays pending');
+  assertCheck(created.alerts[0]?.situation === 'open', 'create starts open');
   assertCheck(created.outbox.length === 1, 'create enqueues the outbox');
   assertCheck(created.outbox[0]?.alertId === 'a1', 'outbox points at the alert');
   assertCheck(created.alerts[0]?.coordinate === undefined, 'create without a place stays unpinned');

@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { AlertsSnapshot, CreateAlertInput } from '../types/alert.types';
+import type { AlertSituation, AlertsSnapshot, CreateAlertInput } from '../types/alert.types';
 import { alertsService, normalizeCreateAlert } from '../../../services/alerts/alertsService';
 import { useConnectivityStore } from '../../connectivity/store/useConnectivityStore';
 import { connectivityService } from '../../../services/connectivity/connectivityService';
 import { locationService } from '../../../services/location/locationService';
+import { identityService } from '../../../services/identity/identityService';
 import { mmkvStateStorage } from '../../../services/database/mmkvStorage';
 
 interface AlertsStoreState extends AlertsSnapshot {
@@ -13,6 +14,7 @@ interface AlertsStoreState extends AlertsSnapshot {
   syncing: boolean;
   hydrate: () => void;
   createAlert: (input: CreateAlertInput) => Promise<boolean>;
+  setSituation: (alertId: string, situation: AlertSituation) => void;
   syncOutbox: () => Promise<void>;
 }
 
@@ -45,9 +47,12 @@ export const useAlertsStore = create<AlertsStoreState>()(
         const coordinate = await locationService.current();
 
         try {
+          const identity = identityService.ensure();
           const snapshot = alertsService.createAlert({
             ...draft,
             coordinate: coordinate ?? undefined,
+            reporterId: identity.id,
+            reporterCode: identity.shortCode,
           });
           set({ alerts: snapshot.alerts, outbox: snapshot.outbox, formError: null });
           if (connectivityService.status() === 'online') {
@@ -59,6 +64,10 @@ export const useAlertsStore = create<AlertsStoreState>()(
           set({ formError: message });
           return false;
         }
+      },
+      setSituation: (alertId, situation) => {
+        const snapshot = alertsService.setSituation(alertId, situation);
+        set({ alerts: snapshot.alerts, outbox: snapshot.outbox });
       },
       syncOutbox: () => {
         if (syncTask) {

@@ -1,5 +1,5 @@
 import { applyCreate, applySyncSuccess } from '../../features/alerts/domain/alertsDomain';
-import type { AlertsSnapshot, CreateAlertInput } from '../../features/alerts/types/alert.types';
+import type { AlertSituation, AlertsSnapshot, CreateAlertInput } from '../../features/alerts/types/alert.types';
 import { alertsApi } from '../api/alertsApi';
 import { alertsDatabase } from '../database/alertsDatabase';
 
@@ -18,6 +18,16 @@ export const alertsRepository = {
       outboxId: createId(),
       now: new Date().toISOString(),
     });
+    alertsDatabase.write(next);
+    return next;
+  },
+
+  setSituation(alertId: string, situation: AlertSituation): AlertsSnapshot {
+    const current = alertsDatabase.read();
+    const next = {
+      ...current,
+      alerts: current.alerts.map((alert) => (alert.id === alertId ? { ...alert, situation } : alert)),
+    };
     alertsDatabase.write(next);
     return next;
   },

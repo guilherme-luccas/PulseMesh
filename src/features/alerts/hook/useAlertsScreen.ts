@@ -1,7 +1,10 @@
-import { useCallback, useState } from 'react';
-import type { AlertSeverity, EmergencyAlert } from '../types/alert.types';
+import { useCallback, useMemo, useState } from 'react';
+import type { AlertSeverity, AlertSituation, EmergencyAlert } from '../types/alert.types';
 import { useAlertsStore } from '../store/useAlertsStore';
 import { useMapFocusStore } from '../../map/store/useMapFocusStore';
+import { useAdminStore } from '../../admin/store/useAdminStore';
+import { canJoinTopic } from '../domain/topicAccess';
+import { identityService } from '../../../services/identity/identityService';
 
 export interface AlertsScreenViewModel {
   alerts: EmergencyAlert[];
@@ -18,6 +21,17 @@ export interface AlertsScreenViewModel {
   onCreate: () => void;
   onSync: () => void;
   onOpenAlert: (alert: EmergencyAlert) => void;
+  onOpenTopic: (alert: EmergencyAlert) => void;
+  canOpenTopic: (alert: EmergencyAlert) => boolean;
+  adminUnlocked: boolean;
+  adminError: string | null;
+  codeOpen: boolean;
+  onAdminPress: () => void;
+  onCloseCode: () => void;
+  onSubmitCode: (code: string) => void;
+  situationFilter: AlertSituation | 'all';
+  situationCounts: Record<AlertSituation, number>;
+  setSituationFilter: (filter: AlertSituation | 'all') => void;
 }
 
 export function useAlertsScreen(): AlertsScreenViewModel {
@@ -28,11 +42,41 @@ export function useAlertsScreen(): AlertsScreenViewModel {
   const createAlert = useAlertsStore((state) => state.createAlert);
   const syncOutbox = useAlertsStore((state) => state.syncOutbox);
   const focusAlert = useMapFocusStore((state) => state.focusAlert);
+  const openTopic = useMapFocusStore((state) => state.openTopic);
+  const adminUnlocked = useAdminStore((state) => state.unlocked);
+  const adminError = useAdminStore((state) => state.error);
+  const unlock = useAdminStore((state) => state.unlock);
+  const lock = useAdminStore((state) => state.lock);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<AlertSeverity>('warning');
   const [saving, setSaving] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [situationFilter, setSituationFilter] = useState<AlertSituation | 'all'>('open');
+
+  const situationCounts = useMemo(() => {
+    const counts: Record<AlertSituation, number> = { open: 0, attending: 0, closed: 0 };
+    for (const alert of alerts) {
+      counts[alert.situation ?? 'open'] += 1;
+    }
+    return counts;
+  }, [alerts]);
+
+  const visibleAlerts = adminUnlocked
+    ? alerts.filter((alert) => situationFilter === 'all' || (alert.situation ?? 'open') === situationFilter)
+    : alerts;
+  const identityId = identityService.current()?.id ?? null;
+
+  const canOpenTopic = useCallback(
+    (alert: EmergencyAlert) =>
+      canJoinTopic({
+        reporterId: alert.reporterId,
+        identityId,
+        isAdmin: adminUnlocked,
+      }),
+    [adminUnlocked, identityId],
+  );
 
   const onCreate = useCallback(() => {
     setSaving(true);
@@ -52,6 +96,40 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     void syncOutbox();
   }, [syncOutbox]);
 
+  const onOpenTopic = useCallback(
+    (alert: EmergencyAlert) => {
+      if (!canOpenTopic(alert)) {
+        return;
+      }
+
+      openTopic(alert.id);
+    },
+    [canOpenTopic, openTopic],
+  );
+
+  const onAdminPress = useCallback(() => {
+    if (adminUnlocked) {
+      lock();
+      return;
+    }
+
+    useAdminStore.setState({ error: null });
+    setCodeOpen(true);
+  }, [adminUnlocked, lock]);
+
+  const onCloseCode = useCallback(() => {
+    setCodeOpen(false);
+  }, []);
+
+  const onSubmitCode = useCallback(
+    (code: string) => {
+      if (unlock(code)) {
+        setCodeOpen(false);
+      }
+    },
+    [unlock],
+  );
+
   const onOpenAlert = useCallback(
     (alert: EmergencyAlert) => {
       if (!alert.coordinate) {
@@ -64,7 +142,7 @@ export function useAlertsScreen(): AlertsScreenViewModel {
   );
 
   return {
-    alerts,
+    alerts: visibleAlerts,
     pendingCount,
     syncing,
     saving,
@@ -78,5 +156,16 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     onCreate,
     onSync,
     onOpenAlert,
+    onOpenTopic,
+    canOpenTopic,
+    adminUnlocked,
+    adminError,
+    codeOpen,
+    onAdminPress,
+    onCloseCode,
+    onSubmitCode,
+    situationFilter,
+    situationCounts,
+    setSituationFilter,
   };
 }

@@ -1,4 +1,4 @@
-import type { AlertsSnapshot, CreateAlertInput } from '../../features/alerts/types/alert.types';
+import type { AlertsSnapshot, AlertSituation, CreateAlertInput } from '../../features/alerts/types/alert.types';
 import { connectivityService } from '../connectivity/connectivityService';
 import { alertsRepository } from '../repositories/alertsRepository';
 
@@ -38,6 +38,8 @@ export function normalizeCreateAlert(input: CreateAlertInput): CreateAlertInput 
     description,
     severity: input.severity,
     coordinate: input.coordinate,
+    reporterId: input.reporterId,
+    reporterCode: input.reporterCode,
   };
 }
 
@@ -48,6 +50,10 @@ export const alertsService = {
 
   createAlert(input: CreateAlertInput): AlertsSnapshot {
     return alertsRepository.create(normalizeCreateAlert(input));
+  },
+
+  setSituation(alertId: string, situation: AlertSituation): AlertsSnapshot {
+    return alertsRepository.setSituation(alertId, situation);
   },
 
   async syncOutbox(): Promise<SyncResult> {

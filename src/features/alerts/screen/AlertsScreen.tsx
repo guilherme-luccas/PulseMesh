@@ -1,8 +1,10 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConnectivityBanner } from '../../connectivity/components/ConnectivityBanner';
+import { AdminCodeSheet } from '../../admin/components/AdminCodeSheet';
 import { AlertCard } from '../components/AlertCard';
 import { AlertComposer } from '../components/AlertComposer';
+import { AdminQueueBar } from '../components/AdminQueueBar';
 import { useAlertsScreen } from '../hook/useAlertsScreen';
 import { alertsStyles } from '../styles/alerts.styles';
 
@@ -22,6 +24,17 @@ export function AlertsScreen() {
     onCreate,
     onSync,
     onOpenAlert,
+    onOpenTopic,
+    canOpenTopic,
+    adminUnlocked,
+    adminError,
+    codeOpen,
+    onAdminPress,
+    onCloseCode,
+    onSubmitCode,
+    situationFilter,
+    situationCounts,
+    setSituationFilter,
   } = useAlertsScreen();
 
   const syncDisabled = syncing || pendingCount === 0;
@@ -29,9 +42,23 @@ export function AlertsScreen() {
   return (
     <SafeAreaView style={alertsStyles.screen} edges={['top']}>
       <View style={alertsStyles.header}>
-        <Text style={alertsStyles.title}>PulseMesh</Text>
+        <View style={alertsStyles.titleRow}>
+          <Text style={alertsStyles.title}>PulseMesh</Text>
+          <Pressable
+            onPress={onAdminPress}
+            style={[alertsStyles.adminButton, adminUnlocked ? alertsStyles.adminButtonActive : null]}
+            accessibilityRole="button"
+            accessibilityLabel={adminUnlocked ? 'Sair do modo admin' : 'Entrar como admin'}
+          >
+            <Text style={[alertsStyles.adminButtonText, adminUnlocked ? alertsStyles.adminButtonTextActive : null]}>
+              {adminUnlocked ? 'Sair' : 'Admin'}
+            </Text>
+          </Pressable>
+        </View>
         <Text style={alertsStyles.subtitle}>
-          Alertas ficam neste aparelho. Com rede, a fila tenta sair sozinha.
+          {adminUnlocked
+            ? 'Modo operação. Os alertas abaixo são a fila para atendimento.'
+            : 'Alertas ficam neste aparelho. Com rede, a fila tenta sair sozinha.'}
         </Text>
         <ConnectivityBanner />
         <View style={alertsStyles.syncRow}>
@@ -55,21 +82,40 @@ export function AlertsScreen() {
         data={alerts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={alertsStyles.list}
-        renderItem={({ item }) => <AlertCard alert={item} onOpen={onOpenAlert} />}
-        ListEmptyComponent={<Text style={alertsStyles.empty}>Nenhum alerta salvo neste aparelho.</Text>}
+        renderItem={({ item }) => (
+          <AlertCard
+            alert={item}
+            showSituation={adminUnlocked}
+            showTopic={canOpenTopic(item)}
+            onOpen={onOpenAlert}
+            onOpenTopic={onOpenTopic}
+          />
+        )}
+        ListEmptyComponent={
+          <Text style={alertsStyles.empty}>
+            {adminUnlocked ? 'Nenhum alerta neste status.' : 'Nenhum alerta salvo neste aparelho.'}
+          </Text>
+        }
       />
 
-      <AlertComposer
-        title={title}
-        description={description}
-        severity={severity}
-        error={formError}
-        saving={saving}
-        onChangeTitle={setTitle}
-        onChangeDescription={setDescription}
-        onChangeSeverity={setSeverity}
-        onSubmit={onCreate}
-      />
+      {adminUnlocked ? (
+        <AdminQueueBar filter={situationFilter} counts={situationCounts} onChange={setSituationFilter} />
+      ) : (
+        <AlertComposer
+          title={title}
+          description={description}
+          severity={severity}
+          error={formError}
+          saving={saving}
+          onChangeTitle={setTitle}
+          onChangeDescription={setDescription}
+          onChangeSeverity={setSeverity}
+          onSubmit={onCreate}
+        />
+      )}
+      {codeOpen ? (
+        <AdminCodeSheet visible error={adminError} onClose={onCloseCode} onSubmit={onSubmitCode} />
+      ) : null}
     </SafeAreaView>
   );
 }

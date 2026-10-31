@@ -4,6 +4,14 @@ export type AlertSeverity = (typeof ALERT_SEVERITIES)[number];
 
 export type SyncStatus = 'pending' | 'synced';
 
+export type AlertSituation = 'open' | 'attending' | 'closed';
+
+export const ALERT_SITUATION_LABEL: Record<AlertSituation, string> = {
+  open: 'Aberto',
+  attending: 'Em atendimento',
+  closed: 'Encerrado',
+};
+
 export interface AlertCoordinate {
   latitude: number;
   longitude: number;
@@ -16,7 +24,10 @@ export interface EmergencyAlert {
   severity: AlertSeverity;
   createdAt: string;
   syncStatus: SyncStatus;
+  situation: AlertSituation;
   coordinate?: AlertCoordinate;
+  reporterId?: string;
+  reporterCode?: string;
 }
 
 export interface CreateAlertInput {
@@ -24,6 +35,8 @@ export interface CreateAlertInput {
   description: string;
   severity: AlertSeverity;
   coordinate?: AlertCoordinate;
+  reporterId?: string;
+  reporterCode?: string;
 }
 
 export interface OutboxEntry {

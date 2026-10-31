@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertsScreen } from './src/features/alerts/screen/AlertsScreen';
+import { AlertTopicScreen } from './src/features/alerts/screen/AlertTopicScreen';
 import { useConnectivity } from './src/features/connectivity/hook/useConnectivity';
 import { MapScreen } from './src/features/map/screen/MapScreen';
 import { useMapFocusStore } from './src/features/map/store/useMapFocusStore';
@@ -17,17 +18,28 @@ export default function App() {
 
 function AppShell() {
   const tab = useMapFocusStore((state) => state.tab);
+  const topicAlertId = useMapFocusStore((state) => state.topicAlertId);
   const setTab = useMapFocusStore((state) => state.setTab);
   const insets = useSafeAreaInsets();
   useConnectivity();
 
   return (
     <View style={styles.root}>
-      <View style={styles.body}>{tab === 'alerts' ? <AlertsScreen /> : <MapScreen />}</View>
-      <View style={[styles.tabs, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <TabButton label="Alertas" selected={tab === 'alerts'} onPress={() => setTab('alerts')} />
-        <TabButton label="Mapa" selected={tab === 'map'} onPress={() => setTab('map')} />
+      <View style={styles.body}>
+        {topicAlertId ? (
+          <AlertTopicScreen alertId={topicAlertId} />
+        ) : tab === 'alerts' ? (
+          <AlertsScreen />
+        ) : (
+          <MapScreen />
+        )}
       </View>
+      {topicAlertId ? null : (
+        <View style={[styles.tabs, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <TabButton label="Alertas" selected={tab === 'alerts'} onPress={() => setTab('alerts')} />
+          <TabButton label="Mapa" selected={tab === 'map'} onPress={() => setTab('map')} />
+        </View>
+      )}
     </View>
   );
 }

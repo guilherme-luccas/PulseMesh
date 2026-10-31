@@ -1,5 +1,6 @@
 import type {
   AlertCoordinate,
+  AlertSituation,
   AlertsSnapshot,
   AlertSeverity,
   EmergencyAlert,
@@ -26,6 +27,12 @@ function isSyncStatus(value: unknown): value is SyncStatus {
   return typeof value === 'string' && SYNC_STATUSES.includes(value as SyncStatus);
 }
 
+const SITUATIONS: readonly AlertSituation[] = ['open', 'attending', 'closed'];
+
+function isSituation(value: unknown): value is AlertSituation {
+  return typeof value === 'string' && SITUATIONS.includes(value as AlertSituation);
+}
+
 function isAlert(value: unknown): value is EmergencyAlert {
   return (
     isRecord(value) &&
@@ -37,6 +44,19 @@ function isAlert(value: unknown): value is EmergencyAlert {
     isSyncStatus(value.syncStatus) &&
     (value.coordinate === undefined || isCoordinate(value.coordinate))
   );
+}
+
+function toAlert(value: unknown): EmergencyAlert | null {
+  if (!isAlert(value)) {
+    return null;
+  }
+
+  return {
+    ...value,
+    situation: isSituation(value.situation) ? value.situation : 'open',
+    reporterId: typeof value.reporterId === 'string' ? value.reporterId : undefined,
+    reporterCode: typeof value.reporterCode === 'string' ? value.reporterCode : undefined,
+  };
 }
 
 function isCoordinate(value: unknown): value is AlertCoordinate {
@@ -71,7 +91,10 @@ function parseSnapshot(raw: string | undefined): AlertsSnapshot {
     }
 
     return {
-      alerts: parsed.alerts.filter(isAlert),
+      alerts: parsed.alerts.flatMap((item) => {
+        const alert = toAlert(item);
+        return alert ? [alert] : [];
+      }),
       outbox: parsed.outbox.filter(isOutboxEntry),
     };
   } catch {
