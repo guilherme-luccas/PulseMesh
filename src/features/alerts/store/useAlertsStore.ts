@@ -1,47 +1,90 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { AlertsSnapshot, CreateAlertInput } from '../types/alert.types';
-import { alertsService } from '../../../services/alerts/alertsService';
+import { alertsService, normalizeCreateAlert } from '../../../services/alerts/alertsService';
+import { useConnectivityStore } from '../../connectivity/store/useConnectivityStore';
+import { connectivityService } from '../../../services/connectivity/connectivityService';
+import { locationService } from '../../../services/location/locationService';
 import { mmkvStateStorage } from '../../../services/database/mmkvStorage';
 
 interface AlertsStoreState extends AlertsSnapshot {
-  error: string | null;
+  formError: string | null;
+  syncMessage: string | null;
+  syncing: boolean;
   hydrate: () => void;
-  createAlert: (input: CreateAlertInput) => boolean;
+  createAlert: (input: CreateAlertInput) => Promise<boolean>;
   syncOutbox: () => Promise<void>;
 }
 
 type PersistedAlertsState = Pick<AlertsStoreState, 'alerts' | 'outbox'>;
 
-function applySnapshot(snapshot: AlertsSnapshot): Pick<AlertsStoreState, 'alerts' | 'outbox' | 'error'> {
-  return {
-    alerts: snapshot.alerts,
-    outbox: snapshot.outbox,
-    error: null,
-  };
-}
+let syncTask: Promise<void> | null = null;
 
 export const useAlertsStore = create<AlertsStoreState>()(
   persist(
     (set) => ({
       alerts: [],
       outbox: [],
-      error: null,
+      formError: null,
+      syncMessage: null,
+      syncing: false,
       hydrate: () => {
-        set(applySnapshot(alertsService.list()));
+        const snapshot = alertsService.list();
+        set({ alerts: snapshot.alerts, outbox: snapshot.outbox });
       },
-      createAlert: (input) => {
+      createAlert: async (input) => {
+        let draft: CreateAlertInput;
         try {
-          set(applySnapshot(alertsService.createAlert(input)));
+          draft = normalizeCreateAlert(input);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Não foi possível salvar o alerta.';
+          set({ formError: message });
+          return false;
+        }
+
+        const coordinate = await locationService.current();
+
+        try {
+          const snapshot = alertsService.createAlert({
+            ...draft,
+            coordinate: coordinate ?? undefined,
+          });
+          set({ alerts: snapshot.alerts, outbox: snapshot.outbox, formError: null });
+          if (connectivityService.status() === 'online') {
+            void useAlertsStore.getState().syncOutbox();
+          }
           return true;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Não foi possível salvar o alerta.';
-          set({ error: message });
+          set({ formError: message });
           return false;
         }
       },
-      syncOutbox: async () => {
-        set(applySnapshot(await alertsService.syncOutbox()));
+      syncOutbox: () => {
+        if (syncTask) {
+          return syncTask;
+        }
+
+        syncTask = (async () => {
+          set({ syncing: true });
+          try {
+            const status = await connectivityService.refresh();
+            useConnectivityStore.getState().setStatus(status, { react: false });
+            const result = await alertsService.syncOutbox();
+            set({
+              alerts: result.snapshot.alerts,
+              outbox: result.snapshot.outbox,
+              syncMessage: result.message,
+            });
+          } catch {
+            set({ syncMessage: 'Não foi possível sincronizar a fila.' });
+          } finally {
+            set({ syncing: false });
+            syncTask = null;
+          }
+        })();
+
+        return syncTask;
       },
     }),
     {

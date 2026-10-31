@@ -7,8 +7,9 @@ Aplicativo de resiliência urbana e alertas de emergência, offline-first, para 
 - **Clean Architecture + MVVM**, organizada por feature em `src/features/`.
 - A tela consome só o hook (`hook/useAlertsScreen.ts`). O hook lê a store Zustand.
 - A store chama `alertsService`. O serviço valida e delega ao `alertsRepository`.
-- O repositório escolhe a fonte: MMKV local e, na sincronização, a API mockada.
-- A fila `outbox` guarda criações feitas sem rede. Sincronizar envia e marca o alerta como sincronizado.
+- O repositório escolhe a fonte: MMKV local e, na sincronização, a API.
+- A fila `outbox` guarda criações feitas sem rede. Ao abrir online, ao voltar a rede ou ao salvar já online, o app tenta enviar. Sem servidor, o alerta continua na fila.
+- O mapa usa `expo-maps` e marca os alertas que têm localização.
 
 ## Como rodar
 

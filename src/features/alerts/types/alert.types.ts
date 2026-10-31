@@ -4,6 +4,11 @@ export type AlertSeverity = (typeof ALERT_SEVERITIES)[number];
 
 export type SyncStatus = 'pending' | 'synced';
 
+export interface AlertCoordinate {
+  latitude: number;
+  longitude: number;
+}
+
 export interface EmergencyAlert {
   id: string;
   title: string;
@@ -11,12 +16,14 @@ export interface EmergencyAlert {
   severity: AlertSeverity;
   createdAt: string;
   syncStatus: SyncStatus;
+  coordinate?: AlertCoordinate;
 }
 
 export interface CreateAlertInput {
   title: string;
   description: string;
   severity: AlertSeverity;
+  coordinate?: AlertCoordinate;
 }
 
 export interface OutboxEntry {

@@ -23,6 +23,7 @@ export function applyCreate(
         severity: input.severity,
         createdAt: ids.now,
         syncStatus: 'pending',
+        coordinate: input.coordinate,
       },
       ...snapshot.alerts,
     ],
@@ -71,6 +72,19 @@ export function runAlertsDomainCheck(): void {
   assertCheck(created.alerts[0]?.syncStatus === 'pending', 'create stays pending');
   assertCheck(created.outbox.length === 1, 'create enqueues the outbox');
   assertCheck(created.outbox[0]?.alertId === 'a1', 'outbox points at the alert');
+  assertCheck(created.alerts[0]?.coordinate === undefined, 'create without a place stays unpinned');
+
+  const placed = applyCreate(
+    EMPTY_ALERTS_SNAPSHOT,
+    {
+      title: 'Alagamento',
+      description: 'Av. Paulista',
+      severity: 'critical',
+      coordinate: { latitude: -23.56, longitude: -46.65 },
+    },
+    { alertId: 'a2', outboxId: 'o2', now: '2026-10-30T00:00:00.000Z' },
+  );
+  assertCheck(placed.alerts[0]?.coordinate?.latitude === -23.56, 'create keeps the latitude');
 
   const synced = applySyncSuccess(created, new Set(['a1']));
   assertCheck(synced.outbox.length === 0, 'sync clears the outbox');

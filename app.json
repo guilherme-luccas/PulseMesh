@@ -23,6 +23,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "O PulseMesh usa sua localização para marcar o alerta no mapa."
+        }
+      ]
+    ]
   }
 }

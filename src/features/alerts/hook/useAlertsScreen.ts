@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { AlertSeverity, EmergencyAlert } from '../types/alert.types';
 import { useAlertsStore } from '../store/useAlertsStore';
+import { useMapFocusStore } from '../../map/store/useMapFocusStore';
 
 export interface AlertsScreenViewModel {
   alerts: EmergencyAlert[];
   pendingCount: number;
   syncing: boolean;
-  error: string | null;
+  saving: boolean;
+  formError: string | null;
   title: string;
   description: string;
   severity: AlertSeverity;
@@ -15,45 +17,58 @@ export interface AlertsScreenViewModel {
   setSeverity: (value: AlertSeverity) => void;
   onCreate: () => void;
   onSync: () => void;
+  onOpenAlert: (alert: EmergencyAlert) => void;
 }
 
 export function useAlertsScreen(): AlertsScreenViewModel {
   const alerts = useAlertsStore((state) => state.alerts);
   const pendingCount = useAlertsStore((state) => state.outbox.length);
-  const error = useAlertsStore((state) => state.error);
-  const hydrate = useAlertsStore((state) => state.hydrate);
+  const formError = useAlertsStore((state) => state.formError);
+  const syncing = useAlertsStore((state) => state.syncing);
   const createAlert = useAlertsStore((state) => state.createAlert);
   const syncOutbox = useAlertsStore((state) => state.syncOutbox);
+  const focusAlert = useMapFocusStore((state) => state.focusAlert);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<AlertSeverity>('warning');
-  const [syncing, setSyncing] = useState(false);
-
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
+  const [saving, setSaving] = useState(false);
 
   const onCreate = useCallback(() => {
-    const saved = createAlert({ title, description, severity });
-    if (saved) {
-      setTitle('');
-      setDescription('');
-    }
+    setSaving(true);
+    void createAlert({ title, description, severity })
+      .then((saved) => {
+        if (saved) {
+          setTitle('');
+          setDescription('');
+        }
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   }, [createAlert, description, severity, title]);
 
   const onSync = useCallback(() => {
-    setSyncing(true);
-    syncOutbox().finally(() => {
-      setSyncing(false);
-    });
+    void syncOutbox();
   }, [syncOutbox]);
+
+  const onOpenAlert = useCallback(
+    (alert: EmergencyAlert) => {
+      if (!alert.coordinate) {
+        return;
+      }
+
+      focusAlert(alert.id);
+    },
+    [focusAlert],
+  );
 
   return {
     alerts,
     pendingCount,
     syncing,
-    error,
+    saving,
+    formError,
     title,
     description,
     severity,
@@ -62,5 +77,6 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     setSeverity,
     onCreate,
     onSync,
+    onOpenAlert,
   };
 }

@@ -1,17 +1,18 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ConnectivityBanner } from '../../connectivity/components/ConnectivityBanner';
 import { AlertCard } from '../components/AlertCard';
 import { AlertComposer } from '../components/AlertComposer';
 import { useAlertsScreen } from '../hook/useAlertsScreen';
 import { alertsStyles } from '../styles/alerts.styles';
-import type { EmergencyAlert } from '../types/alert.types';
 
 export function AlertsScreen() {
   const {
     alerts,
     pendingCount,
     syncing,
-    error,
+    formError,
+    saving,
     title,
     description,
     severity,
@@ -20,17 +21,19 @@ export function AlertsScreen() {
     setSeverity,
     onCreate,
     onSync,
+    onOpenAlert,
   } = useAlertsScreen();
 
   const syncDisabled = syncing || pendingCount === 0;
 
   return (
-    <SafeAreaView style={alertsStyles.screen} edges={['top', 'bottom']}>
+    <SafeAreaView style={alertsStyles.screen} edges={['top']}>
       <View style={alertsStyles.header}>
         <Text style={alertsStyles.title}>PulseMesh</Text>
         <Text style={alertsStyles.subtitle}>
-          Alertas ficam neste aparelho e entram na fila até a sincronização.
+          Alertas ficam neste aparelho. Com rede, a fila tenta sair sozinha.
         </Text>
+        <ConnectivityBanner />
         <View style={alertsStyles.syncRow}>
           <Text style={alertsStyles.pending}>
             {pendingCount === 1 ? '1 alerta na fila' : `${pendingCount} alertas na fila`}
@@ -52,7 +55,7 @@ export function AlertsScreen() {
         data={alerts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={alertsStyles.list}
-        renderItem={renderAlert}
+        renderItem={({ item }) => <AlertCard alert={item} onOpen={onOpenAlert} />}
         ListEmptyComponent={<Text style={alertsStyles.empty}>Nenhum alerta salvo neste aparelho.</Text>}
       />
 
@@ -60,7 +63,8 @@ export function AlertsScreen() {
         title={title}
         description={description}
         severity={severity}
-        error={error}
+        error={formError}
+        saving={saving}
         onChangeTitle={setTitle}
         onChangeDescription={setDescription}
         onChangeSeverity={setSeverity}
@@ -68,8 +72,4 @@ export function AlertsScreen() {
       />
     </SafeAreaView>
   );
-}
-
-function renderAlert({ item }: { item: EmergencyAlert }) {
-  return <AlertCard alert={item} />;
 }

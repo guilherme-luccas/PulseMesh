@@ -1,4 +1,5 @@
 import type {
+  AlertCoordinate,
   AlertsSnapshot,
   AlertSeverity,
   EmergencyAlert,
@@ -33,7 +34,18 @@ function isAlert(value: unknown): value is EmergencyAlert {
     typeof value.description === 'string' &&
     isSeverity(value.severity) &&
     typeof value.createdAt === 'string' &&
-    isSyncStatus(value.syncStatus)
+    isSyncStatus(value.syncStatus) &&
+    (value.coordinate === undefined || isCoordinate(value.coordinate))
+  );
+}
+
+function isCoordinate(value: unknown): value is AlertCoordinate {
+  return (
+    isRecord(value) &&
+    typeof value.latitude === 'number' &&
+    typeof value.longitude === 'number' &&
+    Number.isFinite(value.latitude) &&
+    Number.isFinite(value.longitude)
   );
 }
 

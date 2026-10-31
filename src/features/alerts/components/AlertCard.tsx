@@ -1,9 +1,10 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { ALERT_SEVERITY_LABEL, type EmergencyAlert } from '../types/alert.types';
 import { SEVERITY_COLOR, alertsStyles } from '../styles/alerts.styles';
 
 interface AlertCardProps {
   alert: EmergencyAlert;
+  onOpen: (alert: EmergencyAlert) => void;
 }
 
 function formatCreatedAt(value: string): string {
@@ -15,12 +16,19 @@ function formatCreatedAt(value: string): string {
   return date.toLocaleString('pt-BR');
 }
 
-export function AlertCard({ alert }: AlertCardProps) {
+export function AlertCard({ alert, onOpen }: AlertCardProps) {
   const color = SEVERITY_COLOR[alert.severity];
   const statusLabel = alert.syncStatus === 'pending' ? 'Na fila' : 'Sincronizado';
+  const hasPlace = Boolean(alert.coordinate);
 
   return (
-    <View style={alertsStyles.card}>
+    <Pressable
+      style={alertsStyles.card}
+      disabled={!hasPlace}
+      onPress={() => onOpen(alert)}
+      accessibilityRole={hasPlace ? 'button' : undefined}
+      accessibilityLabel={hasPlace ? `Abrir ${alert.title} no mapa` : alert.title}
+    >
       <View style={alertsStyles.cardTop}>
         <Text style={alertsStyles.cardTitle}>{alert.title}</Text>
         <View style={[alertsStyles.badge, { backgroundColor: color }]}>
@@ -30,7 +38,8 @@ export function AlertCard({ alert }: AlertCardProps) {
       {alert.description ? <Text style={alertsStyles.cardDescription}>{alert.description}</Text> : null}
       <Text style={alertsStyles.cardMeta}>
         {formatCreatedAt(alert.createdAt)} · {statusLabel}
+        {alert.coordinate ? ' · No mapa' : ' · Sem local'}
       </Text>
-    </View>
+    </Pressable>
   );
 }

@@ -11,6 +11,7 @@ interface AlertComposerProps {
   description: string;
   severity: AlertSeverity;
   error: string | null;
+  saving: boolean;
   onChangeTitle: (value: string) => void;
   onChangeDescription: (value: string) => void;
   onChangeSeverity: (value: AlertSeverity) => void;
@@ -22,6 +23,7 @@ export function AlertComposer({
   description,
   severity,
   error,
+  saving,
   onChangeTitle,
   onChangeDescription,
   onChangeSeverity,
@@ -71,11 +73,13 @@ export function AlertComposer({
       {error ? <Text style={alertsStyles.error}>{error}</Text> : null}
       <Pressable
         onPress={onSubmit}
-        style={alertsStyles.submit}
+        disabled={saving}
+        style={[alertsStyles.submit, saving ? alertsStyles.syncButtonDisabled : null]}
         accessibilityRole="button"
         accessibilityLabel="Salvar alerta"
+        accessibilityState={{ disabled: saving }}
       >
-        <Text style={alertsStyles.submitText}>Salvar alerta</Text>
+        <Text style={alertsStyles.submitText}>{saving ? 'Salvando' : 'Salvar alerta'}</Text>
       </Pressable>
     </View>
   );
