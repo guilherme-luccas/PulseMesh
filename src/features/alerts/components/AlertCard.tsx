@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { ALERT_SEVERITY_LABEL, ALERT_SITUATION_LABEL, type EmergencyAlert } from '../types/alert.types';
-import { SEVERITY_COLOR, SITUATION_COLOR, alertsStyles } from '../styles/alerts.styles';
+import { useAlertsStyles } from '../styles/alerts.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 
 interface AlertCardProps {
   alert: EmergencyAlert;
@@ -21,9 +22,11 @@ function formatCreatedAt(value: string): string {
 }
 
 export function AlertCard({ alert, onOpen, onOpenTopic, onDelete, showTopic = true, canDelete = false }: AlertCardProps) {
-  const color = SEVERITY_COLOR[alert.severity];
+  const alertsStyles = useAlertsStyles();
+  const colors = useThemeColors();
+  const color = colors.severity[alert.severity];
   const situation = alert.situation ?? 'open';
-  const situationColor = SITUATION_COLOR[situation];
+  const situationColor = colors.situation[situation];
   const statusLabel = alert.syncStatus === 'pending' ? 'Na fila' : 'Sincronizado';
   const hasPlace = Boolean(alert.coordinate);
 

@@ -6,7 +6,8 @@ import { AlertCard } from '../components/AlertCard';
 import { AlertComposer } from '../components/AlertComposer';
 import { AdminQueueBar } from '../components/AdminQueueBar';
 import { useAlertsScreen } from '../hook/useAlertsScreen';
-import { alertsStyles } from '../styles/alerts.styles';
+import { useAlertsStyles } from '../styles/alerts.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 
 export function AlertsScreen() {
   const {
@@ -44,6 +45,8 @@ export function AlertsScreen() {
     situationCounts,
     setSituationFilter,
   } = useAlertsScreen();
+  const alertsStyles = useAlertsStyles();
+  const colors = useThemeColors();
 
   const syncDisabled = syncing || pendingCount === 0;
 
@@ -88,7 +91,7 @@ export function AlertsScreen() {
             accessibilityLabel="Sincronizar fila"
             accessibilityState={{ disabled: syncDisabled, busy: syncing }}
           >
-            {syncing ? <ActivityIndicator size="small" color="#D7F5EA" /> : null}
+            {syncing ? <ActivityIndicator size="small" color={colors.onSync} /> : null}
             <Text style={alertsStyles.syncButtonText}>{syncing ? 'Sincronizando' : 'Sincronizar'}</Text>
           </Pressable>
         </View>

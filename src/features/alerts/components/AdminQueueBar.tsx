@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ALERT_SITUATION_LABEL, type AlertSituation } from '../types/alert.types';
-import { alertsStyles } from '../styles/alerts.styles';
+import { useAlertsStyles } from '../styles/alerts.styles';
 
 interface AdminQueueBarProps {
   filter: AlertSituation | 'all';
@@ -11,6 +11,7 @@ interface AdminQueueBarProps {
 const FILTERS: Array<AlertSituation | 'all'> = ['open', 'attending', 'closed', 'all'];
 
 export function AdminQueueBar({ filter, counts, onChange }: AdminQueueBarProps) {
+  const alertsStyles = useAlertsStyles();
   const total = counts.open + counts.attending + counts.closed;
 
   return (

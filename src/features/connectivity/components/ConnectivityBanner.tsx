@@ -1,7 +1,8 @@
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useAlertsStore } from '../../alerts/store/useAlertsStore';
 import { useConnectivityStore } from '../store/useConnectivityStore';
-import { connectivityStyles } from '../styles/connectivity.styles';
+import { useConnectivityStyles } from '../styles/connectivity.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 import type { ConnectivityStatus } from '../types/connectivity.types';
 
 function bannerLabel(status: ConnectivityStatus, syncing: boolean, syncMessage: string | null): string {
@@ -25,6 +26,8 @@ export function ConnectivityBanner() {
   const syncing = useAlertsStore((state) => state.syncing);
   const syncMessage = useAlertsStore((state) => state.syncMessage);
   const offline = status === 'offline';
+  const connectivityStyles = useConnectivityStyles();
+  const colors = useThemeColors();
 
   return (
     <View
@@ -32,7 +35,7 @@ export function ConnectivityBanner() {
       accessibilityRole="text"
       accessibilityLabel={bannerLabel(status, syncing, syncMessage)}
     >
-      {syncing ? <ActivityIndicator size="small" color="#F4F7F5" /> : null}
+      {syncing ? <ActivityIndicator size="small" color={colors.onBanner} /> : null}
       <Text style={connectivityStyles.text}>{bannerLabel(status, syncing, syncMessage)}</Text>
     </View>
   );

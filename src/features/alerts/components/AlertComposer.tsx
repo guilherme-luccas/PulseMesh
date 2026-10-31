@@ -4,7 +4,8 @@ import {
   ALERT_SEVERITY_LABEL,
   type AlertSeverity,
 } from '../types/alert.types';
-import { SEVERITY_COLOR, alertsStyles } from '../styles/alerts.styles';
+import { useAlertsStyles } from '../styles/alerts.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 
 interface AlertComposerProps {
   title: string;
@@ -29,13 +30,16 @@ export function AlertComposer({
   onChangeSeverity,
   onSubmit,
 }: AlertComposerProps) {
+  const alertsStyles = useAlertsStyles();
+  const colors = useThemeColors();
+
   return (
     <View style={alertsStyles.composer}>
       <TextInput
         value={title}
         onChangeText={onChangeTitle}
         placeholder="Título do alerta"
-        placeholderTextColor="#7E9088"
+        placeholderTextColor={colors.placeholder}
         style={alertsStyles.input}
         accessibilityLabel="Título do alerta"
       />
@@ -43,7 +47,7 @@ export function AlertComposer({
         value={description}
         onChangeText={onChangeDescription}
         placeholder="O que está acontecendo?"
-        placeholderTextColor="#7E9088"
+        placeholderTextColor={colors.placeholder}
         style={[alertsStyles.input, alertsStyles.inputMultiline]}
         multiline
         accessibilityLabel="Descrição do alerta"
@@ -57,13 +61,13 @@ export function AlertComposer({
               onPress={() => onChangeSeverity(option)}
               style={[
                 alertsStyles.severityChip,
-                selected ? { borderColor: SEVERITY_COLOR[option], backgroundColor: '#24332D' } : null,
+                selected ? { borderColor: colors.severity[option], backgroundColor: colors.chipSelected } : null,
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected }}
               accessibilityLabel={ALERT_SEVERITY_LABEL[option]}
             >
-              <Text style={[alertsStyles.severityChipText, selected ? { color: SEVERITY_COLOR[option] } : null]}>
+              <Text style={[alertsStyles.severityChipText, selected ? { color: colors.severity[option] } : null]}>
                 {ALERT_SEVERITY_LABEL[option]}
               </Text>
             </Pressable>

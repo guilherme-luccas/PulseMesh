@@ -3,10 +3,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConnectivityBanner } from '../../connectivity/components/ConnectivityBanner';
 import { AlertsMap } from '../components/AlertsMap';
 import { useMapScreen } from '../hook/useMapScreen';
-import { mapStyles } from '../styles/map.styles';
+import { useMapStyles } from '../styles/map.styles';
 
 export function MapScreen() {
   const { alerts, camera, showUserLocation, locatedCount } = useMapScreen();
+  const mapStyles = useMapStyles();
 
   return (
     <SafeAreaView style={mapStyles.screen} edges={['top']}>

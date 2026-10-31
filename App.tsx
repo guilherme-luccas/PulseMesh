@@ -1,6 +1,9 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeColors } from './src/theme/useThemeColors';
+import type { ThemeColors } from './src/theme/colors';
 import { AlertsScreen } from './src/features/alerts/screen/AlertsScreen';
 import { AlertTopicScreen } from './src/features/alerts/screen/AlertTopicScreen';
 import { useConnectivity } from './src/features/connectivity/hook/useConnectivity';
@@ -10,7 +13,7 @@ import { useMapFocusStore } from './src/features/map/store/useMapFocusStore';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
       <AppShell />
     </SafeAreaProvider>
   );
@@ -21,6 +24,8 @@ function AppShell() {
   const topicAlertId = useMapFocusStore((state) => state.topicAlertId);
   const setTab = useMapFocusStore((state) => state.setTab);
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useConnectivity();
 
   return (
@@ -36,8 +41,8 @@ function AppShell() {
       </View>
       {topicAlertId ? null : (
         <View style={[styles.tabs, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-          <TabButton label="Alertas" selected={tab === 'alerts'} onPress={() => setTab('alerts')} />
-          <TabButton label="Mapa" selected={tab === 'map'} onPress={() => setTab('map')} />
+          <TabButton label="Alertas" selected={tab === 'alerts'} onPress={() => setTab('alerts')} styles={styles} />
+          <TabButton label="Mapa" selected={tab === 'map'} onPress={() => setTab('map')} styles={styles} />
         </View>
       )}
     </View>
@@ -48,10 +53,12 @@ function TabButton({
   label,
   selected,
   onPress,
+  styles,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
+  styles: ReturnType<typeof createStyles>;
 }) {
   return (
     <Pressable
@@ -66,31 +73,33 @@ function TabButton({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#101614',
-  },
-  body: {
-    flex: 1,
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#24302B',
-    backgroundColor: '#101614',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  tabText: {
-    color: '#7E9088',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  tabTextSelected: {
-    color: '#E8F36A',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.screen,
+    },
+    body: {
+      flex: 1,
+    },
+    tabs: {
+      flexDirection: 'row',
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+      backgroundColor: colors.screen,
+    },
+    tab: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 12,
+    },
+    tabText: {
+      color: colors.meta,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    tabTextSelected: {
+      color: colors.accent,
+    },
+  });
+}

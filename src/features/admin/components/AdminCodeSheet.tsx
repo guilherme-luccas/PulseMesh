@@ -1,6 +1,7 @@
 import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
-import { adminStyles } from '../styles/admin.styles';
+import { useAdminStyles } from '../styles/admin.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 
 interface AdminCodeSheetProps {
   visible: boolean;
@@ -22,6 +23,8 @@ export function AdminCodeSheet({
   onSubmit,
 }: AdminCodeSheetProps) {
   const [code, setCode] = useState('');
+  const adminStyles = useAdminStyles();
+  const colors = useThemeColors();
 
   function submit() {
     onSubmit(code);
@@ -39,7 +42,7 @@ export function AdminCodeSheet({
             autoCapitalize="characters"
             autoCorrect={false}
             placeholder="Código"
-            placeholderTextColor="#7E9088"
+            placeholderTextColor={colors.placeholder}
             style={adminStyles.input}
             accessibilityLabel="Código de admin"
           />

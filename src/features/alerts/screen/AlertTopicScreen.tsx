@@ -1,7 +1,8 @@
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAlertTopic } from '../hook/useAlertTopic';
-import { topicStyles } from '../styles/alertTopic.styles';
+import { useTopicStyles } from '../styles/alertTopic.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
 import type { AlertPost } from '../types/topic.types';
 import { useMapFocusStore } from '../../map/store/useMapFocusStore';
 
@@ -25,6 +26,8 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
     onPublish,
     onSituation,
   } = useAlertTopic(alertId);
+  const topicStyles = useTopicStyles();
+  const colors = useThemeColors();
 
   if (!alert) {
     return (
@@ -91,7 +94,7 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
         data={posts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={topicStyles.list}
-        renderItem={renderPost}
+        renderItem={({ item }) => <PostItem item={item} />}
         ListEmptyComponent={<Text style={topicStyles.empty}>Nenhuma mensagem nesta conversa.</Text>}
       />
 
@@ -101,7 +104,7 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
             value={draft}
             onChangeText={setDraft}
             placeholder={unlocked ? 'Resposta da operação' : 'Escreva na conversa'}
-            placeholderTextColor="#7E9088"
+            placeholderTextColor={colors.placeholder}
             style={topicStyles.input}
             multiline
             accessibilityLabel="Mensagem da conversa"
@@ -120,7 +123,8 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
   );
 }
 
-function renderPost({ item }: { item: AlertPost }) {
+function PostItem({ item }: { item: AlertPost }) {
+  const topicStyles = useTopicStyles();
   const createdAt = new Date(item.createdAt);
   const when = Number.isNaN(createdAt.getTime()) ? item.createdAt : createdAt.toLocaleString('pt-BR');
 

@@ -1,9 +1,10 @@
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import { useEffect, useMemo, useRef } from 'react';
 import { Platform, Text } from 'react-native';
-import { SITUATION_COLOR } from '../../alerts/styles/alerts.styles';
 import { ALERT_SITUATION_LABEL, type EmergencyAlert } from '../../alerts/types/alert.types';
-import { mapStyles } from '../styles/map.styles';
+import { useMapStyles } from '../styles/map.styles';
+import { useThemeColors } from '../../../theme/useThemeColors';
+import type { ThemeColors } from '../../../theme/colors';
 
 interface AlertsMapProps {
   alerts: EmergencyAlert[];
@@ -12,6 +13,8 @@ interface AlertsMapProps {
 }
 
 export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) {
+  const mapStyles = useMapStyles();
+  const colors = useThemeColors();
   const appleRef = useRef<AppleMaps.MapView>(null);
   const googleRef = useRef<GoogleMaps.MapView>(null);
   const skipInitialMove = useRef(true);
@@ -40,9 +43,9 @@ export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) 
         ref={appleRef}
         style={mapStyles.map}
         cameraPosition={position}
-        markers={toAppleMarkers(alerts)}
-        annotations={toAppleLabels(alerts)}
-        colorScheme={AppleMaps.MapColorScheme.DARK}
+        markers={toAppleMarkers(alerts, colors)}
+        annotations={toAppleLabels(alerts, colors)}
+        colorScheme={AppleMaps.MapColorScheme.AUTOMATIC}
         properties={{ isMyLocationEnabled: showUserLocation }}
         uiSettings={{ myLocationButtonEnabled: showUserLocation }}
       />
@@ -64,7 +67,7 @@ export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) 
         style={mapStyles.map}
         cameraPosition={position}
         markers={toGoogleMarkers(alerts)}
-        colorScheme={GoogleMaps.MapColorScheme.DARK}
+        colorScheme={GoogleMaps.MapColorScheme.FOLLOW_SYSTEM}
         properties={{ isMyLocationEnabled: showUserLocation }}
         uiSettings={{ myLocationButtonEnabled: showUserLocation }}
       />
@@ -74,7 +77,7 @@ export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) 
   return <Text style={mapStyles.fallback}>O mapa abre no iOS e no Android.</Text>;
 }
 
-function toAppleMarkers(alerts: EmergencyAlert[]): AppleMaps.Marker[] {
+function toAppleMarkers(alerts: EmergencyAlert[], colors: ThemeColors): AppleMaps.Marker[] {
   return alerts.flatMap((alert) => {
     if (!alert.coordinate) {
       return [];
@@ -84,13 +87,13 @@ function toAppleMarkers(alerts: EmergencyAlert[]): AppleMaps.Marker[] {
       {
         id: alert.id,
         coordinates: alert.coordinate,
-        tintColor: SITUATION_COLOR[alert.situation ?? 'open'].text,
+        tintColor: colors.situation[alert.situation ?? 'open'].text,
       },
     ];
   });
 }
 
-function toAppleLabels(alerts: EmergencyAlert[]): AppleMaps.Annotation[] {
+function toAppleLabels(alerts: EmergencyAlert[], colors: ThemeColors): AppleMaps.Annotation[] {
   return alerts.flatMap((alert) => {
     if (!alert.coordinate) {
       return [];
@@ -101,8 +104,8 @@ function toAppleLabels(alerts: EmergencyAlert[]): AppleMaps.Annotation[] {
         id: `${alert.id}-label`,
         coordinates: alert.coordinate,
         text: alert.title,
-        textColor: '#F4F7F5',
-        backgroundColor: '#1A2420',
+        textColor: colors.mapLabelText,
+        backgroundColor: colors.mapLabelBackground,
         anchor: { x: 0.5, y: 0 },
       },
     ];
