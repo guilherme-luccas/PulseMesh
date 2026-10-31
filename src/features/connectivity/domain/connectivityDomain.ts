@@ -12,8 +12,8 @@ export function resolveConnectivityStatus(state: NetworkSnapshot): Exclude<Conne
   return 'online';
 }
 
-export function planSync(previous: ConnectivityStatus, next: ConnectivityStatus, pendingCount: number): SyncPlan {
-  if (next !== 'online' || pendingCount === 0 || previous === 'online') {
+export function planSync(previous: ConnectivityStatus, next: ConnectivityStatus, _pendingCount: number): SyncPlan {
+  if (next !== 'online' || previous === 'online') {
     return 'skip';
   }
 
@@ -36,7 +36,7 @@ export function runConnectivityDomainCheck(): void {
   assertCheck(planSync('unknown', 'online', 2) === 'flush', 'opening online flushes the queue');
   assertCheck(planSync('offline', 'online', 1) === 'flush', 'reconnect flushes the queue');
   assertCheck(planSync('online', 'online', 2) === 'skip', 'staying online does not flush again');
-  assertCheck(planSync('offline', 'online', 0) === 'skip', 'empty queue does not flush');
+  assertCheck(planSync('offline', 'online', 0) === 'flush', 'reconnect refreshes the list even with an empty queue');
   assertCheck(planSync('online', 'offline', 2) === 'skip', 'going offline does not flush');
 }
 

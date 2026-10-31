@@ -34,7 +34,7 @@ export const useConnectivityStore = create<ConnectivityStoreState>()((set, get) 
       useAlertsStore.getState().hydrate();
       const status = connectivityService.status();
       get().setStatus(status, { react: false });
-      if (status === 'online' && useAlertsStore.getState().outbox.length > 0) {
+      if (status === 'online') {
         void useAlertsStore.getState().syncOutbox();
       }
     };

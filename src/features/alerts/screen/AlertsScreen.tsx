@@ -25,7 +25,9 @@ export function AlertsScreen() {
     onSync,
     onOpenAlert,
     onOpenTopic,
+    onDeleteAlert,
     canOpenTopic,
+    canDeleteAlert,
     adminUnlocked,
     adminError,
     codeOpen,
@@ -86,10 +88,11 @@ export function AlertsScreen() {
         renderItem={({ item }) => (
           <AlertCard
             alert={item}
-            showSituation={adminUnlocked}
             showTopic={canOpenTopic(item)}
+            canDelete={canDeleteAlert(item)}
             onOpen={onOpenAlert}
             onOpenTopic={onOpenTopic}
+            onDelete={onDeleteAlert}
           />
         )}
         ListEmptyComponent={

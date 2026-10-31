@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import type { AlertSeverity, AlertSituation, EmergencyAlert } from '../types/alert.types';
 import { useAlertsStore } from '../store/useAlertsStore';
 import { useMapFocusStore } from '../../map/store/useMapFocusStore';
@@ -22,7 +23,9 @@ export interface AlertsScreenViewModel {
   onSync: () => void;
   onOpenAlert: (alert: EmergencyAlert) => void;
   onOpenTopic: (alert: EmergencyAlert) => void;
+  onDeleteAlert: (alert: EmergencyAlert) => void;
   canOpenTopic: (alert: EmergencyAlert) => boolean;
+  canDeleteAlert: (alert: EmergencyAlert) => boolean;
   adminUnlocked: boolean;
   adminError: string | null;
   codeOpen: boolean;
@@ -40,6 +43,7 @@ export function useAlertsScreen(): AlertsScreenViewModel {
   const formError = useAlertsStore((state) => state.formError);
   const syncing = useAlertsStore((state) => state.syncing);
   const createAlert = useAlertsStore((state) => state.createAlert);
+  const deleteAlert = useAlertsStore((state) => state.deleteAlert);
   const syncOutbox = useAlertsStore((state) => state.syncOutbox);
   const focusAlert = useMapFocusStore((state) => state.focusAlert);
   const openTopic = useMapFocusStore((state) => state.openTopic);
@@ -76,6 +80,16 @@ export function useAlertsScreen(): AlertsScreenViewModel {
         isAdmin: adminUnlocked,
       }),
     [adminUnlocked, identityId],
+  );
+
+  const canDelete = useCallback(
+    (alert: EmergencyAlert) =>
+      canJoinTopic({
+        reporterId: alert.reporterId,
+        identityId,
+        isAdmin: false,
+      }),
+    [identityId],
   );
 
   const onCreate = useCallback(() => {
@@ -130,6 +144,20 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     [unlock],
   );
 
+  const onDeleteAlert = useCallback(
+    (alert: EmergencyAlert) => {
+      if (!canDelete(alert)) {
+        return;
+      }
+
+      Alert.alert('Apagar alerta', `Apagar "${alert.title}"?`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Apagar', style: 'destructive', onPress: () => deleteAlert(alert.id) },
+      ]);
+    },
+    [canDelete, deleteAlert],
+  );
+
   const onOpenAlert = useCallback(
     (alert: EmergencyAlert) => {
       if (!alert.coordinate) {
@@ -157,7 +185,9 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     onSync,
     onOpenAlert,
     onOpenTopic,
+    onDeleteAlert,
     canOpenTopic,
+    canDeleteAlert: canDelete,
     adminUnlocked,
     adminError,
     codeOpen,

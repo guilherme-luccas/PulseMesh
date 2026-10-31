@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { AlertSituation, AlertsSnapshot, CreateAlertInput } from '../types/alert.types';
 import { alertsService, normalizeCreateAlert } from '../../../services/alerts/alertsService';
 import { useConnectivityStore } from '../../connectivity/store/useConnectivityStore';
+import { useMapFocusStore } from '../../map/store/useMapFocusStore';
 import { connectivityService } from '../../../services/connectivity/connectivityService';
 import { locationService } from '../../../services/location/locationService';
 import { identityService } from '../../../services/identity/identityService';
@@ -15,6 +16,7 @@ interface AlertsStoreState extends AlertsSnapshot {
   hydrate: () => void;
   createAlert: (input: CreateAlertInput) => Promise<boolean>;
   setSituation: (alertId: string, situation: AlertSituation) => void;
+  deleteAlert: (alertId: string) => void;
   syncOutbox: () => Promise<void>;
 }
 
@@ -68,6 +70,18 @@ export const useAlertsStore = create<AlertsStoreState>()(
       setSituation: (alertId, situation) => {
         const snapshot = alertsService.setSituation(alertId, situation);
         set({ alerts: snapshot.alerts, outbox: snapshot.outbox });
+        if (connectivityService.status() === 'online') {
+          void useAlertsStore.getState().syncOutbox();
+        }
+      },
+      deleteAlert: (alertId) => {
+        const snapshot = alertsService.deleteAlert(alertId);
+        set({ alerts: snapshot.alerts, outbox: snapshot.outbox });
+        useMapFocusStore.getState().forgetAlert(alertId);
+        const queued = snapshot.outbox.some((entry) => entry.alertId === alertId && entry.operation === 'delete');
+        if (queued && connectivityService.status() === 'online') {
+          void useAlertsStore.getState().syncOutbox();
+        }
       },
       syncOutbox: () => {
         if (syncTask) {

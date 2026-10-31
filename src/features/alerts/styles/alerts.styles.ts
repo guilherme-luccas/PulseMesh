@@ -1,10 +1,16 @@
 import { StyleSheet } from 'react-native';
-import type { AlertSeverity } from '../types/alert.types';
+import type { AlertSeverity, AlertSituation } from '../types/alert.types';
 
 export const SEVERITY_COLOR: Record<AlertSeverity, string> = {
   info: '#7DD3C7',
   warning: '#F5C16C',
   critical: '#FF6B6B',
+};
+
+export const SITUATION_COLOR: Record<AlertSituation, { background: string; text: string }> = {
+  open: { background: '#1E3A34', text: '#7DD3C7' },
+  attending: { background: '#3A3218', text: '#F5C16C' },
+  closed: { background: '#3A2424', text: '#FF8F8F' },
 };
 
 export const alertsStyles = StyleSheet.create({
@@ -128,12 +134,19 @@ export const alertsStyles = StyleSheet.create({
     color: '#7E9088',
     fontSize: 12,
   },
-  topicLink: {
-    alignSelf: 'flex-start',
+  topicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 4,
   },
   topicLinkText: {
     color: '#E8F36A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  deleteLinkText: {
+    color: '#FF8F8F',
     fontSize: 13,
     fontWeight: '700',
   },

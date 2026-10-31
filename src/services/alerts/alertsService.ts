@@ -1,3 +1,4 @@
+import { ADMIN_ACCESS_CODE } from '../../features/admin/admin.constants';
 import type { AlertsSnapshot, AlertSituation, CreateAlertInput } from '../../features/alerts/types/alert.types';
 import { connectivityService } from '../connectivity/connectivityService';
 import { alertsRepository } from '../repositories/alertsRepository';
@@ -56,6 +57,10 @@ export const alertsService = {
     return alertsRepository.setSituation(alertId, situation);
   },
 
+  deleteAlert(alertId: string): AlertsSnapshot {
+    return alertsRepository.delete(alertId);
+  },
+
   async syncOutbox(): Promise<SyncResult> {
     const snapshot = alertsRepository.load();
 
@@ -63,11 +68,7 @@ export const alertsService = {
       return { snapshot, message: null, outcome: 'offline' };
     }
 
-    if (snapshot.outbox.length === 0) {
-      return { snapshot, message: null, outcome: 'empty' };
-    }
-
-    const next = await alertsRepository.sync();
+    const next = await alertsRepository.sync(ADMIN_ACCESS_CODE);
     if (next.outbox.length > 0) {
       return { snapshot: next, message: BACKEND_MESSAGE, outcome: 'backend' };
     }

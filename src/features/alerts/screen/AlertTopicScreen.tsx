@@ -80,7 +80,7 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={topicStyles.list}
         renderItem={renderPost}
-        ListEmptyComponent={<Text style={topicStyles.empty}>Nenhuma mensagem neste tópico.</Text>}
+        ListEmptyComponent={<Text style={topicStyles.empty}>Nenhuma mensagem nesta conversa.</Text>}
       />
 
       {canPost ? (
@@ -88,11 +88,11 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder={unlocked ? 'Resposta da operação' : 'Escreva no tópico'}
+            placeholder={unlocked ? 'Resposta da operação' : 'Escreva na conversa'}
             placeholderTextColor="#7E9088"
             style={topicStyles.input}
             multiline
-            accessibilityLabel="Mensagem do tópico"
+            accessibilityLabel="Mensagem da conversa"
           />
           {error ? <Text style={topicStyles.error}>{error}</Text> : null}
           <Pressable onPress={onPublish} style={topicStyles.submit} accessibilityRole="button" accessibilityLabel="Publicar">

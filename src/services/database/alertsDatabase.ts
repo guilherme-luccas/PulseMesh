@@ -70,13 +70,20 @@ function isCoordinate(value: unknown): value is AlertCoordinate {
 }
 
 function isOutboxEntry(value: unknown): value is OutboxEntry {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    value.operation === 'create' &&
-    typeof value.alertId === 'string' &&
-    typeof value.createdAt === 'string'
-  );
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.alertId !== 'string' ||
+    typeof value.createdAt !== 'string'
+  ) {
+    return false;
+  }
+
+  if (value.operation === 'create' || value.operation === 'delete') {
+    return true;
+  }
+
+  return value.operation === 'situation' && isSituation(value.situation);
 }
 
 function parseSnapshot(raw: string | undefined): AlertsSnapshot {

@@ -15,7 +15,7 @@ export function AdminQueueBar({ filter, counts, onChange }: AdminQueueBarProps) 
 
   return (
     <View style={alertsStyles.composer}>
-      <Text style={alertsStyles.subtitle}>Filtre a fila e abra o tópico para responder ou dar baixa.</Text>
+      <Text style={alertsStyles.subtitle}>Filtre a fila e abra a conversa para responder ou dar baixa.</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -42,6 +42,11 @@ export const topicsDatabase = {
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   },
 
+  remove(alertId: string): void {
+    const next = readAll(readStorageString(TOPICS_KEY)).filter((post) => post.alertId !== alertId);
+    writeStorageString(TOPICS_KEY, JSON.stringify(next));
+  },
+
   append(post: AlertPost): AlertPost[] {
     const all = readAll(readStorageString(TOPICS_KEY));
     const next = [...all, post];

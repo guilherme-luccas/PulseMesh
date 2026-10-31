@@ -10,6 +10,7 @@ interface MapFocusState {
   focusAlert: (id: string) => void;
   openTopic: (id: string) => void;
   closeTopic: () => void;
+  forgetAlert: (id: string) => void;
 }
 
 export const useMapFocusStore = create<MapFocusState>()((set) => ({
@@ -20,4 +21,9 @@ export const useMapFocusStore = create<MapFocusState>()((set) => ({
   focusAlert: (id) => set({ selectedAlertId: id, tab: 'map', topicAlertId: null }),
   openTopic: (id) => set({ topicAlertId: id }),
   closeTopic: () => set({ topicAlertId: null }),
+  forgetAlert: (id) =>
+    set((state) => ({
+      selectedAlertId: state.selectedAlertId === id ? null : state.selectedAlertId,
+      topicAlertId: state.topicAlertId === id ? null : state.topicAlertId,
+    })),
 }));
