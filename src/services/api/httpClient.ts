@@ -85,9 +85,14 @@ export function createHttpClient(baseUrl: string): HttpClient {
     },
 
     async delete<TResponse>(path: string, options?: HttpRequestOptions): Promise<TResponse> {
+      const headers: Record<string, string> = {};
+      if (options?.token) {
+        headers.authorization = `Bearer ${options.token}`;
+      }
+
       const response = await fetch(`${baseUrl}${path}`, {
         method: 'DELETE',
-        headers: authHeaders(options),
+        headers,
       });
 
       if (!response.ok) {
