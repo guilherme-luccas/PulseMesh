@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import type { AlertSeverity, AlertSituation, EmergencyAlert } from '../types/alert.types';
 import { useAlertsStore } from '../store/useAlertsStore';
 import { useMapFocusStore } from '../../map/store/useMapFocusStore';
 import { useAdminStore } from '../../admin/store/useAdminStore';
 import { canJoinTopic } from '../domain/topicAccess';
-import { identityService } from '../../../services/identity/identityService';
+import { identityService, type DeviceIdentity } from '../../../services/identity/identityService';
 
 export interface AlertsScreenViewModel {
   alerts: EmergencyAlert[];
@@ -32,6 +32,12 @@ export interface AlertsScreenViewModel {
   onAdminPress: () => void;
   onCloseCode: () => void;
   onSubmitCode: (code: string) => void;
+  shortCode: string | null;
+  recoverOpen: boolean;
+  recoverError: string | null;
+  onOpenRecover: () => void;
+  onCloseRecover: () => void;
+  onSubmitRecover: (code: string) => void;
   situationFilter: AlertSituation | 'all';
   situationCounts: Record<AlertSituation, number>;
   setSituationFilter: (filter: AlertSituation | 'all') => void;
@@ -57,7 +63,18 @@ export function useAlertsScreen(): AlertsScreenViewModel {
   const [severity, setSeverity] = useState<AlertSeverity>('warning');
   const [saving, setSaving] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
+  const [recoverOpen, setRecoverOpen] = useState(false);
+  const [recoverError, setRecoverError] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<DeviceIdentity | null>(() => identityService.current());
   const [situationFilter, setSituationFilter] = useState<AlertSituation | 'all'>('open');
+
+  useEffect(() => {
+    void identityService.prepare().then(() => {
+      setIdentity(identityService.current());
+    });
+  }, []);
+
+  const identityId = identity?.id ?? null;
 
   const situationCounts = useMemo(() => {
     const counts: Record<AlertSituation, number> = { open: 0, attending: 0, closed: 0 };
@@ -70,7 +87,6 @@ export function useAlertsScreen(): AlertsScreenViewModel {
   const visibleAlerts = adminUnlocked
     ? alerts.filter((alert) => situationFilter === 'all' || (alert.situation ?? 'open') === situationFilter)
     : alerts;
-  const identityId = identityService.current()?.id ?? null;
 
   const canOpenTopic = useCallback(
     (alert: EmergencyAlert) =>
@@ -99,6 +115,7 @@ export function useAlertsScreen(): AlertsScreenViewModel {
         if (saved) {
           setTitle('');
           setDescription('');
+          setIdentity(identityService.current());
         }
       })
       .finally(() => {
@@ -131,9 +148,23 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     setCodeOpen(true);
   }, [adminUnlocked, lock]);
 
-  const onCloseCode = useCallback(() => {
-    setCodeOpen(false);
-  }, []);
+  const onSubmitRecover = useCallback(
+    (code: string) => {
+      void identityService
+        .restore(code)
+        .then((restored) => {
+          setIdentity(restored);
+          setRecoverError(null);
+          setRecoverOpen(false);
+          void syncOutbox();
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : 'Não foi possível recuperar o código.';
+          setRecoverError(message);
+        });
+    },
+    [syncOutbox],
+  );
 
   const onSubmitCode = useCallback(
     (code: string) => {
@@ -160,6 +191,19 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     },
     [canDelete, deleteAlert],
   );
+
+  const onCloseCode = useCallback(() => {
+    setCodeOpen(false);
+  }, []);
+
+  const onOpenRecover = useCallback(() => {
+    setRecoverError(null);
+    setRecoverOpen(true);
+  }, []);
+
+  const onCloseRecover = useCallback(() => {
+    setRecoverOpen(false);
+  }, []);
 
   const onOpenAlert = useCallback(
     (alert: EmergencyAlert) => {
@@ -197,6 +241,12 @@ export function useAlertsScreen(): AlertsScreenViewModel {
     onAdminPress,
     onCloseCode,
     onSubmitCode,
+    shortCode: identity?.shortCode ?? null,
+    recoverOpen,
+    recoverError,
+    onOpenRecover,
+    onCloseRecover,
+    onSubmitRecover,
     situationFilter,
     situationCounts,
     setSituationFilter,

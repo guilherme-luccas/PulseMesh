@@ -4,6 +4,8 @@ import type { AlertPost } from '../types/topic.types';
 import { useAlertsStore } from '../store/useAlertsStore';
 import { useAdminStore } from '../../admin/store/useAdminStore';
 import { identityService } from '../../../services/identity/identityService';
+import { situationEventsService } from '../../../services/situation/situationEventsService';
+import type { SituationEvent } from '../../../services/database/situationEventsDatabase';
 import { topicsService } from '../../../services/topics/topicsService';
 import { canJoinTopic } from '../domain/topicAccess';
 
@@ -13,7 +15,9 @@ export function useAlertTopic(alertId: string) {
   const alert = useAlertsStore((state) => state.alerts.find((item) => item.id === alertId));
   const setSituation = useAlertsStore((state) => state.setSituation);
   const unlocked = useAdminStore((state) => state.unlocked);
+  const adminToken = useAdminStore((state) => state.token);
   const [posts, setPosts] = useState<AlertPost[]>(() => topicsService.list(alertId));
+  const [events, setEvents] = useState<SituationEvent[]>(() => situationEventsService.list(alertId));
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -29,33 +33,41 @@ export function useAlertTopic(alertId: string) {
   }, [alertId, syncOutbox]);
 
   useEffect(() => {
-    if (!syncing) {
-      setPosts(topicsService.list(alertId));
+    if (syncing) {
+      return;
     }
-  }, [alertId, syncing]);
+
+    setPosts(topicsService.list(alertId));
+    void situationEventsService
+      .refresh(alertId, { reporterId: alert?.reporterId, adminToken })
+      .then(setEvents)
+      .catch(() => setEvents(situationEventsService.list(alertId)));
+  }, [adminToken, alert?.reporterId, alertId, syncing]);
 
   function onPublish() {
     if (!canPost) {
       return;
     }
 
-    const identity = identityService.ensure();
-    try {
-      const next = topicsService.publish({
-        alertId,
-        body: draft,
-        authorRole: unlocked ? 'admin' : 'citizen',
-        authorId: unlocked ? 'operator' : identity.id,
-      });
-      setPosts(next.posts);
-      useAlertsStore.setState({ outbox: next.outbox });
-      setDraft('');
-      setError(null);
-      void syncOutbox();
-    } catch (publishError) {
-      const message = publishError instanceof Error ? publishError.message : 'Não foi possível publicar.';
-      setError(message);
-    }
+    void identityService.prepare().then(() => {
+      const identity = identityService.current() ?? identityService.ensure();
+      try {
+        const next = topicsService.publish({
+          alertId,
+          body: draft,
+          authorRole: unlocked ? 'admin' : 'citizen',
+          authorId: unlocked ? 'operator' : identity.id,
+        });
+        setPosts(next.posts);
+        useAlertsStore.setState({ outbox: next.outbox });
+        setDraft('');
+        setError(null);
+        void syncOutbox();
+      } catch (publishError) {
+        const message = publishError instanceof Error ? publishError.message : 'Não foi possível publicar.';
+        setError(message);
+      }
+    });
   }
 
   function onSituation(situation: AlertSituation) {
@@ -64,6 +76,7 @@ export function useAlertTopic(alertId: string) {
     }
 
     setSituation(alertId, situation);
+    setEvents(situationEventsService.list(alertId));
   }
 
   return {
@@ -74,6 +87,7 @@ export function useAlertTopic(alertId: string) {
     unlocked,
     canPost,
     situations: SITUATIONS,
+    events,
     situationLabel: ALERT_SITUATION_LABEL,
     setDraft,
     onPublish,

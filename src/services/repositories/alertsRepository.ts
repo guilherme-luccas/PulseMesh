@@ -14,6 +14,7 @@ import { ApiError } from '../api/httpClient';
 import { peopleApi } from '../api/peopleApi';
 import { postsApi, toRemotePost } from '../api/postsApi';
 import { alertsDatabase } from '../database/alertsDatabase';
+import { situationEventsDatabase } from '../database/situationEventsDatabase';
 import { topicsDatabase } from '../database/topicsDatabase';
 import { identityService } from '../identity/identityService';
 import { topicsRepository } from './topicsRepository';
@@ -63,6 +64,7 @@ export const alertsRepository = {
     });
     alertsDatabase.write(next);
     topicsDatabase.remove(alertId);
+    situationEventsDatabase.remove(alertId);
     return next;
   },
 
@@ -91,11 +93,21 @@ export const alertsRepository = {
       now: new Date().toISOString(),
     });
     alertsDatabase.write(next);
+    const queued = next.outbox.find((entry) => entry.alertId === alertId && entry.operation === 'situation');
+    if (queued?.situation) {
+      situationEventsDatabase.append({
+        id: queued.id,
+        alertId,
+        situation: queued.situation,
+        createdAt: queued.createdAt,
+      });
+    }
     return next;
   },
 
   async sync(adminToken: string | null): Promise<SyncReport> {
     const current = alertsDatabase.read();
+    await identityService.prepare();
     const identity = identityService.current() ?? identityService.ensure();
     const syncedOutboxIds = new Set<string>();
     const seenOutboxIds = new Set(current.outbox.map((entry) => entry.id));
@@ -170,7 +182,11 @@ export const alertsRepository = {
         }
 
         try {
-          await alertsApi.updateSituation(entry.alertId, entry.situation, adminToken);
+          await alertsApi.updateSituation(
+            entry.alertId,
+            { id: entry.id, situation: entry.situation, createdAt: entry.createdAt },
+            adminToken,
+          );
           syncedOutboxIds.add(entry.id);
         } catch (error) {
           note(error, (status) => {
@@ -274,6 +290,7 @@ export const alertsRepository = {
         for (const alertId of previousIds) {
           if (!next.alerts.some((alert) => alert.id === alertId)) {
             topicsDatabase.remove(alertId);
+            situationEventsDatabase.remove(alertId);
           }
         }
 

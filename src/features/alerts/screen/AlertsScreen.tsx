@@ -34,6 +34,12 @@ export function AlertsScreen() {
     onAdminPress,
     onCloseCode,
     onSubmitCode,
+    shortCode,
+    recoverOpen,
+    recoverError,
+    onOpenRecover,
+    onCloseRecover,
+    onSubmitRecover,
     situationFilter,
     situationCounts,
     setSituationFilter,
@@ -60,8 +66,15 @@ export function AlertsScreen() {
         <Text style={alertsStyles.subtitle}>
           {adminUnlocked
             ? 'Modo operação. Os alertas abaixo são a fila para atendimento.'
-            : 'Alertas ficam neste aparelho. Com rede, a fila tenta sair sozinha.'}
+            : shortCode
+              ? `Seu código ${shortCode}. Ele recupera esta pessoa se o app for reinstalado.`
+              : 'Recupere seu código se este aparelho já criou alertas.'}
         </Text>
+        {adminUnlocked ? null : (
+          <Pressable onPress={onOpenRecover} accessibilityRole="button" accessibilityLabel="Recuperar código">
+            <Text style={alertsStyles.pending}>Recuperar código</Text>
+          </Pressable>
+        )}
         <ConnectivityBanner />
         <View style={alertsStyles.syncRow}>
           <Text style={alertsStyles.pending}>
@@ -119,6 +132,17 @@ export function AlertsScreen() {
       )}
       {codeOpen ? (
         <AdminCodeSheet visible error={adminError} onClose={onCloseCode} onSubmit={onSubmitCode} />
+      ) : null}
+      {recoverOpen ? (
+        <AdminCodeSheet
+          visible
+          error={recoverError}
+          title="Recuperar pessoa"
+          hint="Use o código de 4 letras deste aparelho. Os alertas antigos voltam a ser seus."
+          submitLabel="Recuperar"
+          onClose={onCloseRecover}
+          onSubmit={onSubmitRecover}
+        />
       ) : null}
     </SafeAreaView>
   );

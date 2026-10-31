@@ -1,8 +1,8 @@
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import { useEffect, useMemo, useRef } from 'react';
 import { Platform, Text } from 'react-native';
-import { SEVERITY_COLOR } from '../../alerts/styles/alerts.styles';
-import type { EmergencyAlert } from '../../alerts/types/alert.types';
+import { SITUATION_COLOR } from '../../alerts/styles/alerts.styles';
+import { ALERT_SITUATION_LABEL, type EmergencyAlert } from '../../alerts/types/alert.types';
 import { mapStyles } from '../styles/map.styles';
 
 interface AlertsMapProps {
@@ -50,6 +50,14 @@ export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) 
   }
 
   if (Platform.OS === 'android') {
+    if (!process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY?.trim()) {
+      return (
+        <Text style={mapStyles.fallback}>
+          O mapa no Android precisa de EXPO_PUBLIC_GOOGLE_MAPS_API_KEY e de um novo build.
+        </Text>
+      );
+    }
+
     return (
       <GoogleMaps.View
         ref={googleRef}
@@ -76,7 +84,7 @@ function toAppleMarkers(alerts: EmergencyAlert[]): AppleMaps.Marker[] {
       {
         id: alert.id,
         coordinates: alert.coordinate,
-        tintColor: SEVERITY_COLOR[alert.severity],
+        tintColor: SITUATION_COLOR[alert.situation ?? 'open'].text,
       },
     ];
   });
@@ -111,7 +119,7 @@ function toGoogleMarkers(alerts: EmergencyAlert[]): GoogleMaps.Marker[] {
       {
         id: alert.id,
         title: alert.title,
-        snippet: alert.description,
+        snippet: `${ALERT_SITUATION_LABEL[alert.situation ?? 'open']}${alert.description ? ` · ${alert.description}` : ''}`,
         coordinates: alert.coordinate,
       },
     ];

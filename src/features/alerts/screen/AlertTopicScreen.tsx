@@ -19,6 +19,7 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
     unlocked,
     canPost,
     situations,
+    events,
     situationLabel,
     setDraft,
     onPublish,
@@ -72,6 +73,17 @@ export function AlertTopicScreen({ alertId }: AlertTopicScreenProps) {
               );
             })}
           </View>
+        ) : null}
+        {events.length > 0 ? (
+          <Text style={topicStyles.meta}>
+            {events
+              .map((event) => {
+                const when = new Date(event.createdAt);
+                const clock = Number.isNaN(when.getTime()) ? event.createdAt : when.toLocaleString('pt-BR');
+                return `${situationLabel[event.situation]} · ${clock}`;
+              })
+              .join('\n')}
+          </Text>
         ) : null}
       </View>
 

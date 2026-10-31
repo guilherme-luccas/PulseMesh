@@ -47,6 +47,7 @@ export const useAlertsStore = create<AlertsStoreState>()(
         }
 
         const coordinate = await locationService.current();
+        await identityService.prepare();
 
         try {
           const identity = identityService.ensure();

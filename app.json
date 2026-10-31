@@ -31,7 +31,8 @@
           "requestLocationPermission": true,
           "locationPermission": "O PulseMesh usa sua localização para marcar o alerta no mapa."
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

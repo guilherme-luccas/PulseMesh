@@ -5,11 +5,22 @@ import { adminStyles } from '../styles/admin.styles';
 interface AdminCodeSheetProps {
   visible: boolean;
   error: string | null;
+  title?: string;
+  hint?: string;
+  submitLabel?: string;
   onClose: () => void;
   onSubmit: (code: string) => void;
 }
 
-export function AdminCodeSheet({ visible, error, onClose, onSubmit }: AdminCodeSheetProps) {
+export function AdminCodeSheet({
+  visible,
+  error,
+  title = 'Código de acesso',
+  hint = 'A equipe de operação usa este código para assumir alertas.',
+  submitLabel = 'Entrar',
+  onClose,
+  onSubmit,
+}: AdminCodeSheetProps) {
   const [code, setCode] = useState('');
 
   function submit() {
@@ -20,8 +31,8 @@ export function AdminCodeSheet({ visible, error, onClose, onSubmit }: AdminCodeS
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={adminStyles.backdrop} onPress={onClose}>
         <Pressable style={adminStyles.sheet} onPress={() => undefined}>
-          <Text style={adminStyles.title}>Código de acesso</Text>
-          <Text style={adminStyles.hint}>A equipe de operação usa este código para assumir alertas.</Text>
+          <Text style={adminStyles.title}>{title}</Text>
+          <Text style={adminStyles.hint}>{hint}</Text>
           <TextInput
             value={code}
             onChangeText={setCode}
@@ -39,7 +50,7 @@ export function AdminCodeSheet({ visible, error, onClose, onSubmit }: AdminCodeS
             accessibilityRole="button"
             accessibilityLabel="Entrar como admin"
           >
-            <Text style={adminStyles.submitText}>Entrar</Text>
+            <Text style={adminStyles.submitText}>{submitLabel}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

@@ -29,7 +29,15 @@ export const alertsApi = {
     return httpClient.get<unknown>('/alerts', { token });
   },
 
-  updateSituation(alertId: string, situation: AlertSituation, token: string): Promise<RemoteAlertReceipt> {
-    return httpClient.patch<RemoteAlertReceipt>(`/alerts/${encodeURIComponent(alertId)}`, { situation }, { token });
+  updateSituation(
+    alertId: string,
+    event: { id: string; situation: AlertSituation; createdAt: string },
+    token: string,
+  ): Promise<RemoteAlertReceipt> {
+    return httpClient.patch<RemoteAlertReceipt>(`/alerts/${encodeURIComponent(alertId)}`, event, { token });
+  },
+
+  listEvents(alertId: string, token: string): Promise<unknown> {
+    return httpClient.get<unknown>(`/alerts/${encodeURIComponent(alertId)}/events`, { token });
   },
 };

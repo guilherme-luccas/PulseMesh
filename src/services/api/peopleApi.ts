@@ -10,4 +10,8 @@ export const peopleApi = {
   register(input: { id: string; shortCode: string }): Promise<RemotePerson> {
     return httpClient.post<RemotePerson>('/people', input);
   },
+
+  recover(shortCode: string): Promise<RemotePerson> {
+    return httpClient.post<RemotePerson>('/people/recover', { shortCode });
+  },
 };

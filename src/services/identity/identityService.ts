@@ -1,3 +1,6 @@
+import * as SecureStore from 'expo-secure-store';
+import { ApiError } from '../api/httpClient';
+import { peopleApi } from '../api/peopleApi';
 import { readStorageString, writeStorageString } from '../database/mmkvStorage';
 
 const IDENTITY_KEY = 'pulsemesh.identity';
@@ -20,7 +23,7 @@ function createShortCode(): string {
   return code;
 }
 
-function readIdentity(raw: string | undefined): DeviceIdentity | null {
+export function readIdentity(raw: string | undefined | null): DeviceIdentity | null {
   if (!raw) {
     return null;
   }
@@ -44,7 +47,42 @@ function readIdentity(raw: string | undefined): DeviceIdentity | null {
   return null;
 }
 
+function writeLocal(identity: DeviceIdentity): void {
+  writeStorageString(IDENTITY_KEY, JSON.stringify(identity));
+}
+
+async function writeSecure(identity: DeviceIdentity): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(IDENTITY_KEY, JSON.stringify(identity));
+  } catch {
+    // The keychain can be unavailable. The local copy still works until the app is removed.
+  }
+}
+
+let preparing: Promise<void> | null = null;
+
 export const identityService = {
+  prepare(): Promise<void> {
+    preparing ??= (async () => {
+      try {
+        const stored = readIdentity(await SecureStore.getItemAsync(IDENTITY_KEY));
+        if (stored) {
+          writeLocal(stored);
+          return;
+        }
+      } catch {
+        // Fall through to the copy already on this install.
+      }
+
+      const local = readIdentity(readStorageString(IDENTITY_KEY));
+      if (local) {
+        await writeSecure(local);
+      }
+    })();
+
+    return preparing;
+  },
+
   current(): DeviceIdentity | null {
     return readIdentity(readStorageString(IDENTITY_KEY));
   },
@@ -56,7 +94,25 @@ export const identityService = {
     }
 
     const created = { id: createId(), shortCode: createShortCode() };
-    writeStorageString(IDENTITY_KEY, JSON.stringify(created));
+    writeLocal(created);
+    void writeSecure(created);
     return created;
+  },
+
+  async restore(shortCode: string): Promise<DeviceIdentity> {
+    await this.prepare();
+    try {
+      const person = await peopleApi.recover(shortCode.trim().toUpperCase());
+      const identity = { id: person.id, shortCode: person.shortCode };
+      writeLocal(identity);
+      await writeSecure(identity);
+      return identity;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      throw new Error('Sem servidor para recuperar o código.');
+    }
   },
 };
