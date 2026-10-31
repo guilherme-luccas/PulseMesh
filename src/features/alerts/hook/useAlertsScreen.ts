@@ -137,11 +137,14 @@ export function useAlertsScreen(): AlertsScreenViewModel {
 
   const onSubmitCode = useCallback(
     (code: string) => {
-      if (unlock(code)) {
-        setCodeOpen(false);
-      }
+      void unlock(code).then((accepted) => {
+        if (accepted) {
+          setCodeOpen(false);
+          void syncOutbox();
+        }
+      });
     },
-    [unlock],
+    [syncOutbox, unlock],
   );
 
   const onDeleteAlert = useCallback(

@@ -36,6 +36,14 @@ function readAll(raw: string | undefined): AlertPost[] {
 }
 
 export const topicsDatabase = {
+  read(): AlertPost[] {
+    return readAll(readStorageString(TOPICS_KEY));
+  },
+
+  write(posts: readonly AlertPost[]): void {
+    writeStorageString(TOPICS_KEY, JSON.stringify(posts));
+  },
+
   list(alertId: string): AlertPost[] {
     return readAll(readStorageString(TOPICS_KEY))
       .filter((post) => post.alertId === alertId)

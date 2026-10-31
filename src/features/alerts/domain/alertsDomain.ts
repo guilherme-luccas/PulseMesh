@@ -159,7 +159,9 @@ export function applySituation(
 export function applyRemoteAlerts(snapshot: AlertsSnapshot, remote: readonly RemoteAlertRecord[]): AlertsSnapshot {
   const localIds = new Set(snapshot.alerts.map((alert) => alert.id));
   const remoteById = new Map(remote.map((alert) => [alert.id, alert]));
-  const blocked = new Set(snapshot.outbox.map((entry) => entry.alertId));
+  const blocked = new Set(
+    snapshot.outbox.filter((entry) => entry.operation !== 'post').map((entry) => entry.alertId),
+  );
 
   const kept = snapshot.alerts.flatMap((alert) => {
     if (blocked.has(alert.id)) {
@@ -286,6 +288,25 @@ export function runAlertsDomainCheck(): void {
   assertCheck(merged.alerts.length === 1, 'pull adds a remote alert');
   assertCheck(merged.alerts[0]?.syncStatus === 'synced', 'pulled alert is already synced');
   assertCheck(merged.alerts[0]?.reporterId === 'other', 'pull keeps the reporter');
+
+  const chatting = applyRemoteAlerts(
+    {
+      ...synced,
+      outbox: [{ id: 'p1', operation: 'post', alertId: 'a1', createdAt: synced.alerts[0]?.createdAt ?? '', postId: 'post-1' }],
+    },
+    [
+      {
+        id: 'a1',
+        title: 'Alagamento',
+        description: 'Av. Paulista',
+        severity: 'critical',
+        situation: 'attending',
+        createdAt: '2026-10-30T00:00:00.000Z',
+      },
+    ],
+  );
+  assertCheck(chatting.alerts[0]?.situation === 'attending', 'a queued message still accepts the remote situation');
+  assertCheck(chatting.outbox[0]?.operation === 'post', 'a queued message stays in the outbox');
 }
 
 const checkEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process

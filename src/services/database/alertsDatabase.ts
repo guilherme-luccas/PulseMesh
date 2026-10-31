@@ -83,6 +83,10 @@ function isOutboxEntry(value: unknown): value is OutboxEntry {
     return true;
   }
 
+  if (value.operation === 'post') {
+    return typeof value.postId === 'string';
+  }
+
   return value.operation === 'situation' && isSituation(value.situation);
 }
 

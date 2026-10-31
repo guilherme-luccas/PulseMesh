@@ -25,8 +25,8 @@ export const alertsApi = {
     return httpClient.delete<RemoteAlertReceipt>(`/alerts/${encodeURIComponent(alertId)}`, { token });
   },
 
-  list(): Promise<unknown> {
-    return httpClient.get<unknown>('/alerts');
+  list(token: string): Promise<unknown> {
+    return httpClient.get<unknown>('/alerts', { token });
   },
 
   updateSituation(alertId: string, situation: AlertSituation, token: string): Promise<RemoteAlertReceipt> {

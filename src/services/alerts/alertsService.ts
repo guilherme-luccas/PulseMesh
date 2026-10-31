@@ -1,5 +1,5 @@
-import { ADMIN_ACCESS_CODE } from '../../features/admin/admin.constants';
 import type { AlertsSnapshot, AlertSituation, CreateAlertInput } from '../../features/alerts/types/alert.types';
+import { useAdminStore } from '../../features/admin/store/useAdminStore';
 import { connectivityService } from '../connectivity/connectivityService';
 import { alertsRepository } from '../repositories/alertsRepository';
 
@@ -20,7 +20,9 @@ export interface SyncResult {
   outcome: SyncOutcome;
 }
 
-const BACKEND_MESSAGE = 'Sem servidor. A fila foi mantida.';
+const OFFLINE_SERVER = 'Sem servidor. A fila foi mantida.';
+const REJECTED_MESSAGE = 'Parte da fila foi recusada pelo servidor.';
+const ADMIN_MESSAGE = 'A sessão de operação expirou. Entre de novo para enviar a situação.';
 
 export function normalizeCreateAlert(input: CreateAlertInput): CreateAlertInput {
   const title = input.title.trim();
@@ -68,11 +70,27 @@ export const alertsService = {
       return { snapshot, message: null, outcome: 'offline' };
     }
 
-    const next = await alertsRepository.sync(ADMIN_ACCESS_CODE);
-    if (next.outbox.length > 0) {
-      return { snapshot: next, message: BACKEND_MESSAGE, outcome: 'backend' };
+    const report = await alertsRepository.sync(useAdminStore.getState().token);
+    if (report.needsAdmin) {
+      useAdminStore.getState().lock();
     }
 
-    return { snapshot: next, message: null, outcome: 'synced' };
+    if (!report.reachable) {
+      return {
+        snapshot: report.snapshot,
+        message: report.snapshot.outbox.length > 0 ? OFFLINE_SERVER : 'Sem servidor.',
+        outcome: 'backend',
+      };
+    }
+
+    if (report.needsAdmin) {
+      return { snapshot: report.snapshot, message: ADMIN_MESSAGE, outcome: 'backend' };
+    }
+
+    if (report.snapshot.outbox.length > 0) {
+      return { snapshot: report.snapshot, message: REJECTED_MESSAGE, outcome: 'backend' };
+    }
+
+    return { snapshot: report.snapshot, message: null, outcome: 'synced' };
   },
 };

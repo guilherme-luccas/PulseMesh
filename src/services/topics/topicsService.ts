@@ -1,4 +1,6 @@
+import type { OutboxEntry } from '../../features/alerts/types/alert.types';
 import type { AlertPost, PostAuthorRole } from '../../features/alerts/types/topic.types';
+import { alertsRepository } from '../repositories/alertsRepository';
 import { topicsRepository } from '../repositories/topicsRepository';
 
 const POST_MAX_LENGTH = 500;
@@ -20,7 +22,7 @@ export const topicsService = {
     body: string;
     authorRole: PostAuthorRole;
     authorId: string;
-  }): AlertPost[] {
+  }): { posts: AlertPost[]; outbox: OutboxEntry[] } {
     const body = input.body.trim();
     if (!body) {
       throw new TopicValidationError('Escreva uma mensagem.');
@@ -30,6 +32,8 @@ export const topicsService = {
       throw new TopicValidationError('A mensagem deve ter no máximo 500 caracteres.');
     }
 
-    return topicsRepository.add({ ...input, body });
+    const saved = topicsRepository.add({ ...input, body });
+    const outbox = alertsRepository.queuePost(saved.created);
+    return { posts: saved.posts, outbox };
   },
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ALERT_SITUATION_LABEL, type AlertSituation } from '../types/alert.types';
 import type { AlertPost } from '../types/topic.types';
 import { useAlertsStore } from '../store/useAlertsStore';
@@ -18,9 +18,21 @@ export function useAlertTopic(alertId: string) {
   const [error, setError] = useState<string | null>(null);
 
   const identityId = identityService.current()?.id ?? null;
+  const syncing = useAlertsStore((state) => state.syncing);
+  const syncOutbox = useAlertsStore((state) => state.syncOutbox);
   const canPost = alert
     ? canJoinTopic({ reporterId: alert.reporterId, identityId, isAdmin: unlocked })
     : false;
+
+  useEffect(() => {
+    void syncOutbox();
+  }, [alertId, syncOutbox]);
+
+  useEffect(() => {
+    if (!syncing) {
+      setPosts(topicsService.list(alertId));
+    }
+  }, [alertId, syncing]);
 
   function onPublish() {
     if (!canPost) {
@@ -35,9 +47,11 @@ export function useAlertTopic(alertId: string) {
         authorRole: unlocked ? 'admin' : 'citizen',
         authorId: unlocked ? 'operator' : identity.id,
       });
-      setPosts(next);
+      setPosts(next.posts);
+      useAlertsStore.setState({ outbox: next.outbox });
       setDraft('');
       setError(null);
+      void syncOutbox();
     } catch (publishError) {
       const message = publishError instanceof Error ? publishError.message : 'Não foi possível publicar.';
       setError(message);

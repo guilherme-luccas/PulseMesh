@@ -7,8 +7,8 @@ export function canJoinTopic(input: {
     return true;
   }
 
-  if (!input.reporterId) {
-    return true;
+  if (!input.reporterId || !input.identityId) {
+    return false;
   }
 
   return input.reporterId === input.identityId;
@@ -34,8 +34,8 @@ export function runTopicAccessCheck(): void {
     'admin can join any topic',
   );
   assertCheck(
-    canJoinTopic({ reporterId: undefined, identityId: null, isAdmin: false }) === true,
-    'alert saved on this device before an id still belongs here',
+    canJoinTopic({ reporterId: undefined, identityId: 'a', isAdmin: false }) === false,
+    'an alert without an author does not open the conversation',
   );
 }
 

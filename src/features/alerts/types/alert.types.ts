@@ -41,10 +41,11 @@ export interface CreateAlertInput {
 
 export interface OutboxEntry {
   id: string;
-  operation: 'create' | 'delete' | 'situation';
+  operation: 'create' | 'delete' | 'situation' | 'post';
   alertId: string;
   createdAt: string;
   situation?: AlertSituation;
+  postId?: string;
 }
 
 export interface AlertsSnapshot {
