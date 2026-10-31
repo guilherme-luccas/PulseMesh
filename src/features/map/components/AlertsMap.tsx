@@ -41,6 +41,7 @@ export function AlertsMap({ alerts, camera, showUserLocation }: AlertsMapProps) 
         style={mapStyles.map}
         cameraPosition={position}
         markers={toAppleMarkers(alerts)}
+        annotations={toAppleLabels(alerts)}
         colorScheme={AppleMaps.MapColorScheme.DARK}
         properties={{ isMyLocationEnabled: showUserLocation }}
         uiSettings={{ myLocationButtonEnabled: showUserLocation }}
@@ -74,9 +75,27 @@ function toAppleMarkers(alerts: EmergencyAlert[]): AppleMaps.Marker[] {
     return [
       {
         id: alert.id,
-        title: alert.title,
         coordinates: alert.coordinate,
         tintColor: SEVERITY_COLOR[alert.severity],
+      },
+    ];
+  });
+}
+
+function toAppleLabels(alerts: EmergencyAlert[]): AppleMaps.Annotation[] {
+  return alerts.flatMap((alert) => {
+    if (!alert.coordinate) {
+      return [];
+    }
+
+    return [
+      {
+        id: `${alert.id}-label`,
+        coordinates: alert.coordinate,
+        text: alert.title,
+        textColor: '#F4F7F5',
+        backgroundColor: '#1A2420',
+        anchor: { x: 0.5, y: 0 },
       },
     ];
   });
